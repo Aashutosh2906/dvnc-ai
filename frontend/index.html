@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DVNC.AI</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Crimson+Text:ital@0;1&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: #f7f6f2; font-family: 'Inter', system-ui, sans-serif; }
+
+:root {
+  --bg:#f7f6f2; --surf:#ffffff; --surf2:#f3f2ee;
+  --bdr:rgba(26,26,46,0.10); --txt:#1a1a2e;
+  --mut:#6b6a7a; --fnt:#b0afae;
+  --rsm:6px; --rmd:10px; --rxl:20px;
+  --shmd:0 4px 16px rgba(26,26,46,0.08);
+  --shlg:0 12px 40px rgba(26,26,46,0.14);
+  --tr:180ms cubic-bezier(0.16,1,0.3,1);
+  --fb:'Inter',system-ui,sans-serif;
+  --fs:'Crimson Text',Georgia,serif;
+}
+
+#dvnc-root { display:flex; flex-direction:column; width:100%; height:100vh; overflow:hidden; }
+
+.dh { display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; height:52px; min-height:52px; max-height:52px;
+  border-bottom:1px solid var(--bdr); background:var(--surf); flex-shrink:0; }
+.dh-l { display:flex; align-items:center; gap:10px; }
+.dh-r { display:flex; align-items:center; }
+.d-logo { font-size:14px; font-weight:600; letter-spacing:0.03em; color:var(--txt); }
+.d-emblem { color:var(--txt); opacity:0; transform:scale(0.7);
+  transition:opacity 0.6s ease, transform 0.6s ease; display:flex; align-items:center; }
+.d-emblem.vis { opacity:0.18; transform:scale(1); }
+
+.d-tabs { display:flex; gap:4px; }
+.d-tab { font-size:12px; padding:5px 14px; border-radius:var(--rxl); border:none;
+  background:transparent; color:var(--mut); cursor:pointer; font-family:var(--fb);
+  transition:background var(--tr),color var(--tr); }
+.d-tab.on { background:var(--txt); color:#fff; font-weight:500; }
+.d-tab:hover:not(.on) { background:var(--surf2); }
+
+.d-mpill { font-size:11px; border:1px solid var(--bdr); border-radius:var(--rxl);
+  padding:4px 12px; background:var(--surf2); color:var(--txt); cursor:pointer;
+  display:flex; align-items:center; gap:5px; font-family:var(--fb); white-space:nowrap;
+  transition:border-color var(--tr),background var(--tr); }
+.d-mpill:hover { border-color:var(--txt); }
+
+.d-ibtn { width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  border:none; background:none; cursor:pointer; color:var(--mut); font-size:16px;
+  border-radius:var(--rsm); transition:background var(--tr),color var(--tr); }
+.d-ibtn:hover { background:var(--surf2); color:var(--txt); }
+
+/* THE key: only .d-main scrolls */
+.d-main { flex:1 1 0; overflow-y:auto; overflow-x:hidden; min-height:0; background:var(--bg); }
+
+.d-panel { display:none; }
+.d-panel.on { display:block; }
+
+.d-landing { display:flex; align-items:center; justify-content:center;
+  height:calc(100vh - 52px - 62px); position:relative; overflow:hidden; }
+.d-leobg { position:absolute; inset:0; display:flex; align-items:center;
+  justify-content:center; color:var(--txt); pointer-events:none; }
+.d-leosvg { width:100%; height:100%; opacity:0.07; transition:opacity 0.8s ease; }
+.d-leosvg.dim { opacity:0.025; }
+.d-lc { text-align:center; position:relative; z-index:1; padding:0 20px; }
+.d-ltitle { font-size:clamp(36px,6vw,72px); font-weight:600; letter-spacing:0.04em; margin:0 0 12px; }
+.d-ltag { font-family:var(--fs); font-style:italic; font-size:clamp(13px,1.4vw,17px); color:var(--mut); margin:0; }
+
+.d-thread { max-width:760px; margin:0 auto; padding:32px 24px 40px;
+  display:flex; flex-direction:column; gap:20px; }
+.d-thread.off { display:none; }
+.d-umsg { align-self:flex-end; background:var(--txt); color:#fff; font-size:13px;
+  line-height:1.5; padding:10px 14px; border-radius:16px 16px 3px 16px;
+  max-width:72%; word-break:break-word; }
+.d-aiblock { display:flex; flex-direction:column; gap:10px; }
+.d-ailbl { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--fnt); }
+.d-aisum { font-size:13px; color:var(--mut); line-height:1.6; }
+
+.d-oc { border:1px solid var(--bdr); border-radius:var(--rmd); overflow:hidden; }
+.d-och { padding:10px 14px; font-size:9px; font-weight:700; letter-spacing:0.14em;
+  text-transform:uppercase; color:var(--fnt); background:var(--surf2); border-bottom:1px solid var(--bdr); }
+.d-ocb { padding:12px 14px; background:var(--surf); }
+.d-hyp { font-family:var(--fs); font-style:italic; font-size:15px; line-height:1.6; color:var(--txt); margin:0; }
+
+.d-alist { display:flex; flex-direction:column; gap:8px; }
+.d-arow { display:flex; align-items:flex-start; gap:10px; }
+.d-arow.pend .d-aname { color:var(--fnt); }
+.d-adot { width:11px; height:11px; border-radius:50%; border:1.5px solid var(--txt); flex-shrink:0; margin-top:3px; }
+.d-adot.done { background:var(--txt); }
+.d-ainfo { display:flex; flex-direction:column; gap:2px; }
+.d-aname { font-size:12px; font-weight:500; color:var(--txt); }
+.d-atag { font-size:8.5px; font-weight:600; letter-spacing:0.1em; border:1px solid var(--bdr);
+  border-radius:20px; padding:1px 6px; color:var(--mut); text-transform:uppercase; display:inline-block; }
+.d-asum { font-size:11px; color:var(--fnt); line-height:1.4; }
+
+.d-crow { display:flex; gap:10px; flex-wrap:wrap; }
+.d-hc { flex:1; min-width:160px; border:1px solid var(--bdr); border-radius:var(--rmd);
+  padding:12px; background:var(--surf); cursor:pointer; transition:box-shadow var(--tr),transform var(--tr); }
+.d-hc:hover { box-shadow:var(--shmd); transform:translateY(-2px); }
+.d-hcback { display:none; }
+.d-hc.flipped .d-hcfront { display:none; }
+.d-hc.flipped .d-hcback  { display:block; }
+.d-cagent { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--fnt); margin-bottom:4px; }
+.d-cscore { font-size:18px; font-weight:700; color:var(--txt); margin-bottom:2px; }
+.d-cnov   { font-size:9px; color:var(--fnt); margin-bottom:6px; }
+.d-ctitle { font-size:12px; font-weight:600; color:var(--txt); margin-bottom:4px; }
+.d-cbody  { font-size:11px; color:var(--mut); line-height:1.5; }
+.d-cflip  { font-size:10px; color:var(--txt); margin-top:8px; opacity:0.55;
+  background:none; border:none; cursor:pointer; padding:0; display:inline-block; }
+
+.d-schips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.d-schip  { font-size:10px; background:var(--surf2); border:1px solid var(--bdr); border-radius:20px; padding:3px 10px; }
+.d-steps  { font-size:12px; color:var(--mut); line-height:1.8; padding-left:16px; margin:0; }
+
+.d-pacc { border:1px solid var(--bdr); border-radius:var(--rmd); overflow:hidden; }
+.d-pacch { display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--surf2); font-size:11px; font-weight:600;
+  color:var(--txt); cursor:pointer; user-select:none; }
+.d-paccb { background:var(--surf); display:none; }
+.d-prow  { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-top:1px solid var(--bdr); }
+.d-ptitle{ font-size:12px; color:var(--txt); flex:1; line-height:1.4; text-decoration:none; display:block; }
+.d-ptitle:hover { text-decoration:underline; }
+.d-psum  { font-size:11px; color:var(--fnt); margin-top:2px; }
+.d-pbadge{ font-size:9px; background:#e8e8ff; color:#4444aa; border-radius:4px; padding:2px 6px; flex-shrink:0; }
+
+.d-ppanel { max-width:760px; margin:0 auto; padding:36px 24px 40px; }
+.d-ph2  { font-size:20px; font-weight:600; margin:0 0 6px; }
+.d-psub { font-size:13px; color:var(--mut); margin:0 0 20px; }
+.d-psrow{ display:flex; gap:8px; margin-bottom:14px; }
+.d-pinput { flex:1; border:1px solid var(--bdr); border-radius:var(--rxl);
+  padding:9px 16px; font-size:13px; background:var(--surf); color:var(--txt);
+  outline:none; font-family:var(--fb); transition:border-color var(--tr); }
+.d-pinput:focus { border-color:var(--txt); }
+.d-jlinks { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.d-jchip { font-size:11px; border:1px solid var(--bdr); border-radius:var(--rxl);
+  padding:4px 12px; color:var(--mut); text-decoration:none; background:var(--surf);
+  transition:border-color var(--tr),color var(--tr); }
+.d-jchip:hover { border-color:var(--txt); color:var(--txt); }
+.d-presults { display:flex; flex-direction:column; gap:10px; }
+.d-empty { font-size:13px; color:var(--fnt); font-style:italic; margin:0; }
+
+.d-composer { display:flex; align-items:center; gap:8px; padding:10px 20px;
+  height:62px; min-height:62px; border-top:1px solid var(--bdr);
+  background:var(--surf); flex-shrink:0; }
+.d-cinput { flex:1; border:1px solid var(--bdr); border-radius:var(--rxl);
+  padding:9px 16px; font-size:13px; background:var(--surf2); color:var(--txt);
+  outline:none; font-family:var(--fb); transition:border-color var(--tr),background var(--tr); }
+.d-cinput:focus { border-color:var(--txt); background:var(--surf); }
+.d-send { width:34px; height:34px; border-radius:50%; background:var(--txt); color:#fff;
+  border:none; cursor:pointer; font-size:15px; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; transition:opacity var(--tr),transform var(--tr); }
+.d-send:hover { opacity:0.82; }
+.d-send:active { transform:scale(0.92); }
+.d-send:disabled { opacity:0.35; cursor:not-allowed; }
+
+.d-sideMenu { position:fixed; top:0; left:0; bottom:0; width:260px;
+  background:var(--surf); box-shadow:var(--shlg); z-index:10000;
+  transform:translateX(-100%); transition:transform var(--tr); }
+.d-sideMenu.open { transform:translateX(0); }
+.d-smInner { padding:16px 0; height:100%; display:flex; flex-direction:column; box-sizing:border-box; }
+.d-smHead { display:flex; align-items:center; gap:10px;
+  padding:0 16px 14px; border-bottom:1px solid var(--bdr); margin-bottom:8px; }
+.d-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.2);
+  z-index:9999; opacity:0; pointer-events:none; transition:opacity var(--tr); }
+.d-overlay.open { opacity:1; pointer-events:all; }
+.d-mi { display:flex; align-items:center; padding:9px 18px; font-size:13px; color:var(--mut);
+  background:none; border:none; cursor:pointer; text-align:left; width:100%;
+  font-family:var(--fb); transition:background var(--tr),color var(--tr); box-sizing:border-box; }
+.d-mi:hover { background:var(--surf2); color:var(--txt); }
+.d-mi.new { font-weight:600; color:var(--txt); background:var(--surf2); border-radius:var(--rsm);
+  margin:0 10px 4px; padding:9px 12px; width:calc(100% - 20px); }
+.d-mi.new:hover { background:var(--txt); color:#fff; }
+.d-mdiv { border:none; border-top:1px solid var(--bdr); margin:6px 16px; }
+
+.d-mdrop { position:fixed; top:56px; right:16px; width:310px;
+  background:var(--surf); border:1px solid var(--bdr); border-radius:var(--rmd);
+  box-shadow:var(--shlg); z-index:10001; overflow:hidden;
+  opacity:0; pointer-events:none;
+  transform:scale(0.96) translateY(-6px); transform-origin:top right;
+  transition:opacity var(--tr),transform var(--tr); }
+.d-mdrop.open { opacity:1; pointer-events:all; transform:scale(1) translateY(0); }
+.d-mopt { padding:12px 14px; border-bottom:1px solid var(--bdr); cursor:pointer; transition:background var(--tr); }
+.d-mopt:last-child { border-bottom:none; }
+.d-mopt:hover { background:var(--surf2); }
+.d-mopt.sel { background:#f5f5fa; }
+.d-motop { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+.d-moname { font-size:12px; font-weight:600; color:var(--txt); }
+.d-motag  { font-size:9px; font-weight:700; letter-spacing:0.12em; color:var(--mut); text-transform:uppercase; }
+.d-mochk  { font-size:11px; color:var(--txt); margin-left:auto; }
+.d-mochk.off { visibility:hidden; }
+.d-modesc { font-size:11px; color:var(--fnt); }
+
+@keyframes dvshim { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+.d-skel { background:linear-gradient(90deg,var(--surf2) 25%,#edeae5 50%,var(--surf2) 75%);
+  background-size:800px 100%; animation:dvshim 1.5s ease-in-out infinite; border-radius:var(--rsm); }
+
+@media(max-width:640px){
+  .d-tabs .d-tab { font-size:11px; padding:4px 10px; }
+  .dh-r .d-mpill { display:none; }
+  .d-crow { flex-direction:column; }
+  .d-umsg { max-width:88%; }
+}
+</style>
+</head>
+<body>
+<div id="dvnc-root">
+  <!-- side menu -->
+  <div id="d-sm" class="d-sideMenu"><div class="d-smInner">
+    <div class="d-smHead">
+      <button class="d-ibtn" id="d-closemenu">&#x2715;</button>
+      <span class="d-logo">DVNC.AI</span>
+    </div>
+    <button class="d-mi new" id="d-newchat">+ New Chat</button>
+    <hr class="d-mdiv"/>
+    <button class="d-mi" data-tab="discovery">&#x25C8; Discovery Engine</button>
+    <button class="d-mi" data-tab="papers">&#x25CE; Self-Learning Graph</button>
+    <hr class="d-mdiv"/>
+    <button class="d-mi">&#x24D8; About DVNC.AI</button>
+  </div></div>
+  <div id="d-ov" class="d-overlay"></div>
+
+  <!-- model dropdown -->
+  <div id="d-mdrop" class="d-mdrop">
+    <div class="d-mopt sel" data-model="DVNC Sovereign">
+      <div class="d-motop"><span class="d-moname">DVNC Sovereign</span><span class="d-motag">FLAGSHIP</span><span class="d-mochk">&#x2713;</span></div>
+      <div class="d-modesc">Maximum depth orchestration for frontier discovery</div>
+    </div>
+    <div class="d-mopt" data-model="DVNC Atlas">
+      <div class="d-motop"><span class="d-moname">DVNC Atlas</span><span class="d-motag">RESEARCH</span><span class="d-mochk off">&#x2713;</span></div>
+      <div class="d-modesc">Balanced reasoning, graph traversal, and synthesis</div>
+    </div>
+    <div class="d-mopt" data-model="DVNC Curie">
+      <div class="d-motop"><span class="d-moname">DVNC Curie</span><span class="d-motag">LAB</span><span class="d-mochk off">&#x2713;</span></div>
+      <div class="d-modesc">Experimental hypothesis generation for anomalous signals</div>
+    </div>
+  </div>
+
+  <!-- header -->
+  <header class="dh">
+    <div class="dh-l">
+      <button class="d-ibtn" id="d-openmenu">&#x2630;</button>
+      <div class="d-emblem" id="d-emblem">
+        <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="20" cy="20" r="10" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="2" y1="20" x2="38" y2="20" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="20" y1="2" x2="20" y2="38" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="7" y1="7" x2="33" y2="33" stroke="currentColor" stroke-width="0.5"/>
+          <line x1="33" y1="7" x2="7" y2="33" stroke="currentColor" stroke-width="0.5"/>
+        </svg>
+      </div>
+      <span class="d-logo">DVNC.AI</span>
+    </div>
+    <div class="d-tabs">
+      <button class="d-tab on" id="dt-discovery" data-tab="discovery">Discovery Engine</button>
+      <button class="d-tab" id="dt-papers" data-tab="papers">Self-Learning Graph</button>
+    </div>
+    <div class="dh-r">
+      <button class="d-mpill" id="d-hpill">DVNC Sovereign <span>&#x25BE;</span></button>
+    </div>
+  </header>
+
+  <!-- scroll area -->
+  <div class="d-main">
+    <!-- discovery panel -->
+    <div id="dp-discovery" class="d-panel on">
+      <div id="d-landing" class="d-landing">
+        <div class="d-leobg">
+          <svg class="d-leosvg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="400" cy="250" r="200" fill="none" stroke="currentColor" stroke-width="0.6"/>
+            <circle cx="400" cy="250" r="145" fill="none" stroke="currentColor" stroke-width="0.45"/>
+            <circle cx="400" cy="250" r="90"  fill="none" stroke="currentColor" stroke-width="0.35"/>
+            <circle cx="400" cy="250" r="240" fill="none" stroke="currentColor" stroke-width="0.3"/>
+            <line x1="60"  y1="250" x2="740" y2="250" stroke="currentColor" stroke-width="0.4"/>
+            <line x1="400" y1="10"  x2="400" y2="490" stroke="currentColor" stroke-width="0.4"/>
+            <line x1="60"  y1="50"  x2="740" y2="450" stroke="currentColor" stroke-width="0.25"/>
+            <line x1="740" y1="50"  x2="60"  y2="450" stroke="currentColor" stroke-width="0.25"/>
+            <circle cx="280" cy="250" r="60" fill="none" stroke="currentColor" stroke-width="0.35"/>
+            <circle cx="520" cy="250" r="60" fill="none" stroke="currentColor" stroke-width="0.35"/>
+            <ellipse cx="400" cy="250" rx="145" ry="90" fill="none" stroke="currentColor" stroke-width="0.3"/>
+            <circle cx="120" cy="80"  r="2.5" fill="currentColor"/>
+            <circle cx="680" cy="95"  r="2"   fill="currentColor"/>
+            <circle cx="95"  cy="370" r="2"   fill="currentColor"/>
+            <circle cx="710" cy="390" r="2.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="d-lc">
+          <h1 class="d-ltitle">DVNC.AI</h1>
+          <p class="d-ltag">Leonardo&rsquo;s Intelligence. Reimagined for the 21st Century.</p>
+        </div>
+      </div>
+      <div id="d-thread" class="d-thread off"></div>
+    </div>
+
+    <!-- papers panel -->
+    <div id="dp-papers" class="d-panel">
+      <div class="d-ppanel">
+        <h2 class="d-ph2">Self-Learning Graph</h2>
+        <p class="d-psub">Search papers or pick a journal to grow the knowledge graph in real time.</p>
+        <div class="d-psrow">
+          <input id="d-pinput" class="d-pinput" placeholder="Search arXiv&hellip;" type="text" autocomplete="off"/>
+          <button class="d-send" id="d-psend">&#x2191;</button>
+        </div>
+        <div class="d-jlinks">
+          <a href="https://www.nature.com/search" target="_blank" class="d-jchip">Nature</a>
+          <a href="https://www.science.org/search" target="_blank" class="d-jchip">Science</a>
+          <a href="https://www.cell.com/search" target="_blank" class="d-jchip">Cell</a>
+          <a href="https://www.thelancet.com/search" target="_blank" class="d-jchip">The Lancet</a>
+          <a href="https://ieeexplore.ieee.org/search/searchresult.jsp" target="_blank" class="d-jchip">IEEE Xplore</a>
+        </div>
+        <div id="d-presults" class="d-presults">
+          <p class="d-empty">No papers found yet. Enter a topic above.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- composer bar -->
+  <div class="d-composer">
+    <button class="d-mpill" id="d-cpill">Sovereign &#x25BE;</button>
+    <input id="d-cinput" class="d-cinput" placeholder="Ask DVNC.AI anything&hellip;" type="text" autocomplete="off"/>
+    <button class="d-send" id="d-csend">&#x2191;</button>
+  </div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
