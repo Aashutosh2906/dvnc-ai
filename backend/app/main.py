@@ -8,9 +8,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow your GitHub Pages frontend (and localhost for dev)
 ALLOWED_ORIGINS = [
-    "https://<YOUR_GITHUB_USERNAME>.github.io",   # ← replace
+    "https://aashutosh2906.github.io",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
     "http://localhost:3000",
